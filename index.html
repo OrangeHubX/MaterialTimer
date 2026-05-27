@@ -37,7 +37,7 @@
 
     body.ps-active { background: #000000; color: #000000; }
     body.ps-active #top-bar, body.ps-active #controls, body.ps-active #dur-row, 
-    body.ps-active #sessions, body.ps-active #stopwatch-anim, body.ps-active #mode-chip, 
+    body.ps-active #sessions, body.ps-active #sw-pendulum, body.ps-active #mode-chip, 
     body.ps-active #progress, body.ps-active #custom-hint { opacity: 0 !important; pointer-events: none; }
     body.ps-active #timer { color: #666666; transform: scale(0.85); }
 
@@ -93,17 +93,18 @@
     .sdot.done { background: var(--p); }
     .sdot.current { background: var(--p); transform: scale(1.45); }
 
-    /* Minimalist Pendulum Lines Visualization */
-    #stopwatch-anim {
-      display: none; gap: 5px; margin-bottom: 20px; height: 20px;
-      align-items: flex-end; justify-content: space-between;
-      width: 100%; max-width: clamp(160px, 40vw, 240px);
+    /* Minimalist Pendulum */
+    #sw-pendulum {
+      display: none; width: 100%; max-width: 220px; justify-content: space-between; align-items: flex-end;
+      height: 32px; margin: 0 auto 12px auto;
     }
-    .p-line {
-      flex: 1; height: 100%; background: var(--p); border-radius: 2px;
-      transform-origin: bottom; transform: scaleY(0.2); opacity: 0.2;
-      transition: transform 0.12s var(--trans-curve), opacity 0.12s var(--trans-curve);
+    .pline {
+      width: 4px; height: 6px; background: var(--sv); border-radius: 2px;
+      transition: height 0.4s var(--trans-curve), background 0.4s var(--trans-curve);
     }
+    .pline.active { height: 28px; background: var(--p); }
+    .pline.adj-1 { height: 18px; background: var(--olv); }
+    .pline.adj-2 { height: 10px; background: var(--osv); }
 
     #timer {
       font-family: 'Roboto Mono', monospace; font-weight: 300; font-size: clamp(4.5rem, 22vw, 9.5rem);
@@ -159,8 +160,8 @@
     @keyframes ripple-out { to { transform:scale(4); opacity:0; } }
 
     body.fs #top-bar, body.fs #controls, body.fs #dur-row, body.fs #custom-hint,
-    body.fs #mode-chip, body.fs #sessions, body.fs #stopwatch-anim { opacity:0; pointer-events:none; }
-    body.fs.cv #top-bar, body.fs.cv #controls, body.fs.cv #mode-chip, body.fs.cv #sessions, body.fs.cv #stopwatch-anim { opacity:1; pointer-events:auto; }
+    body.fs #mode-chip, body.fs #sessions, body.fs #sw-pendulum { opacity:0; pointer-events:none; }
+    body.fs.cv #top-bar, body.fs.cv #controls, body.fs.cv #mode-chip, body.fs.cv #sessions, body.fs.cv #sw-pendulum { opacity:1; pointer-events:auto; }
     body.fs.cv #dur-row:not(.hidden), body.fs.cv #custom-hint:not([style*="none"]) { opacity:1; pointer-events:auto; }
 
     .scrim {
@@ -197,6 +198,8 @@
     .toggle-switch:checked::after { transform: translateX(20px); background: var(--op); }
     .num-input { background: var(--sch); border: none; color: var(--obg); font-family: 'Roboto Mono', monospace; font-size: 16px; padding: 8px 12px; border-radius: 8px; width: 80px; text-align: center; }
 
+    .app-version { text-align: center; font-size: 12px; color: var(--ol); margin-top: 24px; letter-spacing: 0.5px; }
+
     #warning-dialog {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
       background: var(--sch); border-radius: 28px; padding: 24px; width: 90%; max-width: 320px;
@@ -224,28 +227,21 @@
     #keypad-cancel { background: transparent; color: var(--osv); }
     #keypad-start { background: var(--p); color: var(--op); }
 
-    /* Desktop overrides: Hide grid, show hint */
     @media (hover: hover) and (pointer: fine) {
-      .keypad-grid { display: none; }
-      #desktop-hint { display: block; }
-      #keypad-display { font-size: 48px; margin-bottom: 16px; }
+      .keypad-grid { display: none; } #desktop-hint { display: block; } #keypad-display { font-size: 48px; margin-bottom: 16px; }
     }
 
     /* Landscape Overrides */
     @media (max-height: 550px) {
       #top-bar { padding: 4px 12px; } #mode-chip { margin-bottom: 8px; padding: 4px 12px; }
-      #sessions, #stopwatch-anim { margin-bottom: 8px; } #timer { margin-bottom: 6px; font-size: clamp(3rem, 25vh, 6rem); }
+      #sessions, #sw-pendulum { margin-bottom: 8px; } #timer { margin-bottom: 6px; font-size: clamp(3rem, 25vh, 6rem); }
       #dur-row, #custom-hint { margin-bottom: 12px; } #controls { gap: 16px; }
       #fab { width: 64px; height: 64px; border-radius: 20px; } #fab .material-symbols-rounded { font-size: 32px; }
       .ibtn { width: 48px; height: 48px; border-radius: 24px; }
       
-      /* Landscape Keypad fixes */
-      #keypad-sheet { padding: 12px 16px 20px; }
-      #keypad-display { font-size: 28px; margin-bottom: 12px; }
-      .keypad-grid { gap: 6px; }
-      .kbtn { height: 44px; border-radius: 22px; font-size: 20px; }
-      .keypad-actions { margin-top: 12px; }
-      .keypad-actions button { height: 44px; border-radius: 22px; }
+      #keypad-sheet { padding: 12px 16px 20px; } #keypad-display { font-size: 28px; margin-bottom: 12px; }
+      .keypad-grid { gap: 6px; } .kbtn { height: 44px; border-radius: 22px; font-size: 20px; }
+      .keypad-actions { margin-top: 12px; } .keypad-actions button { height: 44px; border-radius: 22px; }
       .sheet-handle { margin-bottom: 12px; }
     }
 
@@ -281,15 +277,18 @@
 
   <div id="main">
     <div id="mode-chip"><span class="mode-dot" id="mode-dot"></span><span id="mode-text">Focus</span></div>
+    
     <div id="sessions">
       <span class="sdot" data-i="0"></span><span class="sdot" data-i="1"></span>
       <span class="sdot" data-i="2"></span><span class="sdot" data-i="3"></span>
     </div>
     
-    <div id="stopwatch-anim">
-      <div class="p-line"></div><div class="p-line"></div><div class="p-line"></div>
-      <div class="p-line"></div><div class="p-line"></div><div class="p-line"></div>
-      <div class="p-line"></div><div class="p-line"></div><div class="p-line"></div>
+    <div id="sw-pendulum">
+      <div class="pline"></div><div class="pline"></div><div class="pline"></div>
+      <div class="pline"></div><div class="pline"></div><div class="pline"></div>
+      <div class="pline"></div><div class="pline"></div><div class="pline"></div>
+      <div class="pline"></div><div class="pline"></div><div class="pline"></div>
+      <div class="pline"></div><div class="pline"></div><div class="pline"></div>
     </div>
     
     <div id="timer">25:00</div>
@@ -318,6 +317,7 @@
       <div class="setting-row"><span>Enable</span><input type="checkbox" id="ps-toggle" class="toggle-switch"></div>
       <div class="setting-row" style="margin-top: 12px;"><span>Idle timeout (minutes)</span><input type="number" id="ps-time" class="num-input" value="5" min="1"></div>
     </div>
+    <div class="app-version">Version <span id="ver-num"></span></div>
   </div>
 
   <div id="keypad-sheet" class="bottom-sheet">
@@ -356,6 +356,9 @@
   <video id="bgv" loop muted playsinline><source src="blank-0.2-sec.m4v" type="video/mp4"></video>
 
   <script>
+    const APP_VERSION = 'v1.1';
+    document.getElementById('ver-num').textContent = APP_VERSION;
+
     const FOCUS_DEFAULT = 25 * 60, BREAK_SHORT = 5 * 60, BREAK_LONG = 15 * 60, LONG_EVERY = 4;
     const PRESET_COLORS = [{ hex: '#4c8346' }, { hex: '#1a6ca8' }, { hex: '#b5264c' }, { hex: '#6750a4' }, { hex: '#b25e02' }, { hex: '#006b5f' }];
 
@@ -374,7 +377,7 @@
       modeText: document.getElementById('mode-text'), modeDot: document.getElementById('mode-dot'),
       fabIcon: document.getElementById('fab-icon'), durLabel: document.getElementById('dur-label'),
       durRow: document.getElementById('dur-row'), hint: document.getElementById('custom-hint'),
-      sess: document.getElementById('sessions'), swAnim: document.getElementById('stopwatch-anim'),
+      sess: document.getElementById('sessions'), swPendulum: document.getElementById('sw-pendulum'),
       modeChip: document.getElementById('mode-chip'), scrim: document.getElementById('main-scrim'),
       settingsSheet: document.getElementById('settings-sheet'), keypadSheet: document.getElementById('keypad-sheet'),
       keypadDisp: document.getElementById('keypad-display'), bgv: document.getElementById('bgv'),
@@ -396,16 +399,31 @@
     function totalTime() { return !isBreak ? focusDur : (sessions % LONG_EVERY === 0 ? BREAK_LONG : BREAK_SHORT); }
     function snapProgress() { els.prog.style.transition = 'none'; els.prog.style.height = '0%'; requestAnimationFrame(() => requestAnimationFrame(() => els.prog.style.transition = '')); }
 
+    function updatePendulum() {
+      const lines = document.querySelectorAll('.pline');
+      const N = lines.length; // 15
+      const cycle = (N - 1) * 2; // 28
+      let idx = swTime % cycle;
+      if (idx >= N) idx = cycle - idx;
+
+      lines.forEach((line, i) => {
+        line.className = 'pline';
+        if (i === idx) line.classList.add('active');
+        else if (Math.abs(i - idx) === 1) line.classList.add('adj-1');
+        else if (Math.abs(i - idx) === 2) line.classList.add('adj-2');
+      });
+    }
+
     function updateDisplay() {
       const t = fmt(appMode === 'stopwatch' ? swTime : remaining);
       els.timer.textContent = t; document.title = `${t} — Timer`;
-      if (appMode === 'stopwatch') {
-        els.prog.style.height = '0%';
-      } else if (appMode === 'custom') {
-        els.prog.style.height = customDur > 0 ? `${((customDur-remaining)/customDur)*100}%` : '0%';
-      } else if (appMode === 'pomodoro') {
+      if (appMode === 'custom') els.prog.style.height = customDur > 0 ? `${((customDur-remaining)/customDur)*100}%` : '0%';
+      else if (appMode === 'pomodoro') {
         els.prog.style.height = `${((totalTime()-remaining)/totalTime())*100}%`;
         els.durLabel.textContent = `${focusDur/60} min`;
+      } else if (appMode === 'stopwatch') {
+        els.prog.style.height = '0%';
+        updatePendulum();
       }
     }
 
@@ -434,36 +452,11 @@
       }
     }
 
-    /* Continuous Fluid Physics Pendulum Render Loop */
-    function runPendulumLoop(timestamp) {
-      if (appMode !== 'stopwatch' || !isRunning) {
-        document.querySelectorAll('.p-line').forEach(l => { l.style.transform = 'scaleY(0.2)'; l.style.opacity = '0.2'; });
-        return;
-      }
-      const time = timestamp % 2000; 
-      const angle = (time / 2000) * Math.PI * 2;
-      const position = (1 - Math.cos(angle)) / 2; 
-      
-      const lines = document.querySelectorAll('.p-line');
-      const numLines = lines.length;
-      
-      lines.forEach((line, idx) => {
-        const linePos = idx / (numLines - 1);
-        const dist = Math.abs(position - linePos);
-        const intensity = Math.max(0, 1 - dist * 3.5); 
-        
-        line.style.transform = `scaleY(${0.2 + intensity * 0.8})`;
-        line.style.opacity = 0.2 + intensity * 0.8;
-      });
-      requestAnimationFrame(runPendulumLoop);
-    }
-
     function start() {
       if (isRunning) return;
       if (appMode === 'custom' && customDur === 0) { openKeypad(); return; }
       isRunning = true; els.fabIcon.textContent = 'pause'; els.modeDot.classList.add('running');
       if (appMode === 'pomodoro') els.durRow.classList.add('hidden');
-      if (appMode === 'stopwatch') requestAnimationFrame(runPendulumLoop);
       els.bgv.play().catch(()=>{}); updateFSUI(); resetIdle();
 
       ticker = setInterval(() => {
@@ -537,8 +530,10 @@
         appMode = mode;
         document.querySelectorAll('.mtbtn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
         const show = (el, val) => el.style.display = val ? '' : 'none';
+        
         show(els.modeChip, mode !== 'stopwatch'); show(els.sess, mode === 'pomodoro'); show(els.durRow, mode === 'pomodoro');
-        show(els.swAnim, mode === 'stopwatch'); show(els.hint, mode === 'custom'); show(document.getElementById('skip-btn'), mode === 'pomodoro');
+        show(els.swPendulum, mode === 'stopwatch'); show(els.hint, mode === 'custom'); show(document.getElementById('skip-btn'), mode === 'pomodoro');
+        
         els.timer.classList.toggle('clickable', mode === 'custom'); els.modeChip.classList.toggle('editable', mode === 'custom');
 
         if (mode === 'pomodoro') { remaining = totalTime(); updateMode(); }
@@ -573,17 +568,10 @@
 
     document.addEventListener('keydown', e => {
       if (!els.keypadSheet.classList.contains('open')) return;
-      if (e.key >= '0' && e.key <= '9') {
-        if (keypadVal.length < 6) keypadVal += e.key;
-        updateKeypadRender();
-      } else if (e.key === 'Backspace') {
-        keypadVal = keypadVal.slice(0, -1);
-        updateKeypadRender();
-      } else if (e.key === 'Enter') {
-        document.getElementById('keypad-start').click();
-      } else if (e.key === 'Escape') {
-        document.getElementById('keypad-cancel').click();
-      }
+      if (e.key >= '0' && e.key <= '9') { if (keypadVal.length < 6) keypadVal += e.key; updateKeypadRender(); }
+      else if (e.key === 'Backspace') { keypadVal = keypadVal.slice(0, -1); updateKeypadRender(); }
+      else if (e.key === 'Enter') document.getElementById('keypad-start').click();
+      else if (e.key === 'Escape') document.getElementById('keypad-cancel').click();
     });
 
     document.getElementById('keypad-start').addEventListener('click', () => {
