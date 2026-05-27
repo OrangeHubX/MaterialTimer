@@ -85,19 +85,25 @@
     .mode-dot.running { animation: pulse-dot 1.8s ease-in-out infinite; }
     @keyframes pulse-dot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.4; transform:scale(1.6); } }
 
-    #sessions, #stopwatch-anim { display: flex; gap: 10px; margin-bottom: 26px; height: 8px; }
-    #stopwatch-anim { display: none; }
-
-    .sdot, .sw-dot {
+    #sessions { display: flex; gap: 10px; margin-bottom: 26px; height: 8px; }
+    .sdot {
       width: 8px; height: 8px; border-radius: 50%; background: var(--sv);
       transition: background .3s var(--trans-curve), transform .3s var(--trans-curve);
     }
     .sdot.done { background: var(--p); }
     .sdot.current { background: var(--p); transform: scale(1.45); }
-    .sw-dot.running { background: var(--p); animation: pulse-sw 1s infinite alternate; }
-    .sw-dot:nth-child(2) { animation-delay: 0.3s; }
-    .sw-dot:nth-child(3) { animation-delay: 0.6s; }
-    @keyframes pulse-sw { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+
+    /* Minimalist Pendulum Lines Visualization */
+    #stopwatch-anim {
+      display: none; gap: 5px; margin-bottom: 20px; height: 20px;
+      align-items: flex-end; justify-content: space-between;
+      width: 100%; max-width: clamp(160px, 40vw, 240px);
+    }
+    .p-line {
+      flex: 1; height: 100%; background: var(--p); border-radius: 2px;
+      transform-origin: bottom; transform: scaleY(0.2); opacity: 0.2;
+      transition: transform 0.12s var(--trans-curve), opacity 0.12s var(--trans-curve);
+    }
 
     #timer {
       font-family: 'Roboto Mono', monospace; font-weight: 300; font-size: clamp(4.5rem, 22vw, 9.5rem);
@@ -203,7 +209,9 @@
     .dialog-btn { background: transparent; color: var(--p); border: none; font-size: 14px; font-weight: 500; padding: 10px 24px; border-radius: 20px; cursor: pointer; transition: background .2s; }
     .dialog-btn:hover { background: rgba(0,0,0,0.05); }
 
+    /* Custom Keypad UI */
     #keypad-sheet { display: flex; flex-direction: column; align-items: center; }
+    #desktop-hint { display: none; font-size: 13px; font-weight: 500; color: var(--osv); margin-bottom: 16px; letter-spacing: 0.5px; text-transform: uppercase; }
     #keypad-display { font-family: 'Roboto Mono', monospace; font-size: clamp(32px, 8vw, 42px); color: var(--obg); margin-bottom: 24px; letter-spacing: 1px; transition: transform .15s var(--trans-curve); }
     #keypad-display.pop { animation: key-pop .2s var(--trans-curve); }
     @keyframes key-pop { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
@@ -216,6 +224,31 @@
     #keypad-cancel { background: transparent; color: var(--osv); }
     #keypad-start { background: var(--p); color: var(--op); }
 
+    /* Desktop overrides: Hide grid, show hint */
+    @media (hover: hover) and (pointer: fine) {
+      .keypad-grid { display: none; }
+      #desktop-hint { display: block; }
+      #keypad-display { font-size: 48px; margin-bottom: 16px; }
+    }
+
+    /* Landscape Overrides */
+    @media (max-height: 550px) {
+      #top-bar { padding: 4px 12px; } #mode-chip { margin-bottom: 8px; padding: 4px 12px; }
+      #sessions, #stopwatch-anim { margin-bottom: 8px; } #timer { margin-bottom: 6px; font-size: clamp(3rem, 25vh, 6rem); }
+      #dur-row, #custom-hint { margin-bottom: 12px; } #controls { gap: 16px; }
+      #fab { width: 64px; height: 64px; border-radius: 20px; } #fab .material-symbols-rounded { font-size: 32px; }
+      .ibtn { width: 48px; height: 48px; border-radius: 24px; }
+      
+      /* Landscape Keypad fixes */
+      #keypad-sheet { padding: 12px 16px 20px; }
+      #keypad-display { font-size: 28px; margin-bottom: 12px; }
+      .keypad-grid { gap: 6px; }
+      .kbtn { height: 44px; border-radius: 22px; font-size: 20px; }
+      .keypad-actions { margin-top: 12px; }
+      .keypad-actions button { height: 44px; border-radius: 22px; }
+      .sheet-handle { margin-bottom: 12px; }
+    }
+
     #alarm-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
       z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--trans-curve);
@@ -227,13 +260,6 @@
     .alarm-title { font-size: 24px; margin: 16px 0 32px; font-weight: 500; }
     #stop-alarm-btn { background: var(--pc); color: var(--opc); border: none; padding: 18px 36px; border-radius: 24px; font-size: 16px; font-weight: 500; cursor: pointer; }
 
-    @media (max-height: 550px) {
-      #top-bar { padding: 4px 12px; } #mode-chip { margin-bottom: 8px; padding: 4px 12px; }
-      #sessions, #stopwatch-anim { margin-bottom: 8px; } #timer { margin-bottom: 6px; font-size: clamp(3rem, 25vh, 6rem); }
-      #dur-row, #custom-hint { margin-bottom: 12px; } #controls { gap: 16px; }
-      #fab { width: 64px; height: 64px; border-radius: 20px; } #fab .material-symbols-rounded { font-size: 32px; }
-      .ibtn { width: 48px; height: 48px; border-radius: 24px; }
-    }
     #bgv { position:fixed; width:1px; height:1px; opacity:0; pointer-events:none; }
   </style>
 </head>
@@ -259,7 +285,13 @@
       <span class="sdot" data-i="0"></span><span class="sdot" data-i="1"></span>
       <span class="sdot" data-i="2"></span><span class="sdot" data-i="3"></span>
     </div>
-    <div id="stopwatch-anim"><div class="sw-dot"></div><div class="sw-dot"></div><div class="sw-dot"></div></div>
+    
+    <div id="stopwatch-anim">
+      <div class="p-line"></div><div class="p-line"></div><div class="p-line"></div>
+      <div class="p-line"></div><div class="p-line"></div><div class="p-line"></div>
+      <div class="p-line"></div><div class="p-line"></div><div class="p-line"></div>
+    </div>
+    
     <div id="timer">25:00</div>
     <div id="custom-hint">Tap time to edit</div>
     <div id="dur-row">
@@ -290,6 +322,7 @@
 
   <div id="keypad-sheet" class="bottom-sheet">
     <div class="sheet-handle"></div>
+    <div id="desktop-hint">Type using your keyboard</div>
     <div id="keypad-display">00h 00m 00s</div>
     <div class="keypad-grid">
       <button class="kbtn">1</button><button class="kbtn">2</button><button class="kbtn">3</button>
@@ -366,11 +399,14 @@
     function updateDisplay() {
       const t = fmt(appMode === 'stopwatch' ? swTime : remaining);
       els.timer.textContent = t; document.title = `${t} — Timer`;
-      if (appMode === 'custom') els.prog.style.height = customDur > 0 ? `${((customDur-remaining)/customDur)*100}%` : '0%';
-      else if (appMode === 'pomodoro') {
+      if (appMode === 'stopwatch') {
+        els.prog.style.height = '0%';
+      } else if (appMode === 'custom') {
+        els.prog.style.height = customDur > 0 ? `${((customDur-remaining)/customDur)*100}%` : '0%';
+      } else if (appMode === 'pomodoro') {
         els.prog.style.height = `${((totalTime()-remaining)/totalTime())*100}%`;
         els.durLabel.textContent = `${focusDur/60} min`;
-      } else els.prog.style.height = '0%';
+      }
     }
 
     function updateMode() {
@@ -388,7 +424,7 @@
 
     function stopAlarm() {
       vibrate(50); els.alarmAud.pause(); els.alarmAud.currentTime = 0; els.alarmOverlay.classList.remove('open');
-      if (remaining <= 0) { // Safely transition mode AFTER alarm stops
+      if (remaining <= 0) { 
         if (appMode === 'pomodoro') {
           els.durRow.classList.remove('hidden');
           if (!isBreak) { sessions++; updateSessionDots(); }
@@ -398,16 +434,42 @@
       }
     }
 
+    /* Continuous Fluid Physics Pendulum Render Loop */
+    function runPendulumLoop(timestamp) {
+      if (appMode !== 'stopwatch' || !isRunning) {
+        document.querySelectorAll('.p-line').forEach(l => { l.style.transform = 'scaleY(0.2)'; l.style.opacity = '0.2'; });
+        return;
+      }
+      const time = timestamp % 2000; 
+      const angle = (time / 2000) * Math.PI * 2;
+      const position = (1 - Math.cos(angle)) / 2; 
+      
+      const lines = document.querySelectorAll('.p-line');
+      const numLines = lines.length;
+      
+      lines.forEach((line, idx) => {
+        const linePos = idx / (numLines - 1);
+        const dist = Math.abs(position - linePos);
+        const intensity = Math.max(0, 1 - dist * 3.5); 
+        
+        line.style.transform = `scaleY(${0.2 + intensity * 0.8})`;
+        line.style.opacity = 0.2 + intensity * 0.8;
+      });
+      requestAnimationFrame(runPendulumLoop);
+    }
+
     function start() {
       if (isRunning) return;
       if (appMode === 'custom' && customDur === 0) { openKeypad(); return; }
       isRunning = true; els.fabIcon.textContent = 'pause'; els.modeDot.classList.add('running');
       if (appMode === 'pomodoro') els.durRow.classList.add('hidden');
-      if (appMode === 'stopwatch') document.querySelectorAll('.sw-dot').forEach(d => d.classList.add('running'));
+      if (appMode === 'stopwatch') requestAnimationFrame(runPendulumLoop);
       els.bgv.play().catch(()=>{}); updateFSUI(); resetIdle();
 
       ticker = setInterval(() => {
-        if (appMode === 'stopwatch') { swTime++; updateDisplay(); }
+        if (appMode === 'stopwatch') { 
+          swTime++; updateDisplay(); 
+        }
         else {
           remaining--; updateDisplay();
           if (remaining <= 0) {
@@ -415,7 +477,6 @@
             els.modeDot.classList.remove('running'); els.bgv.pause();
             els.timer.classList.add('done'); setTimeout(() => els.timer.classList.remove('done'), 600);
             
-            // Hold progress bar at 100% until alarm is stopped
             els.prog.style.height = '100%';
             if (appMode !== 'stopwatch') els.timer.textContent = fmt(0);
             
@@ -427,7 +488,7 @@
 
     function pause() {
       clearInterval(ticker); isRunning = false; els.fabIcon.textContent = 'play_arrow';
-      els.modeDot.classList.remove('running'); document.querySelectorAll('.sw-dot').forEach(d => d.classList.remove('running'));
+      els.modeDot.classList.remove('running');
       if (appMode === 'pomodoro') els.durRow.classList.remove('hidden'); els.bgv.pause(); updateFSUI();
     }
 
@@ -470,7 +531,7 @@
 
     function executeModeSwitch(mode) {
       pause();
-      els.main.classList.add('switching'); // Trigger fade transition
+      els.main.classList.add('switching');
       
       setTimeout(() => {
         appMode = mode;
@@ -485,13 +546,19 @@
         else if (mode === 'stopwatch') swTime = 0;
         
         snapProgress(); updateDisplay();
-        els.main.classList.remove('switching'); // Fade back in
+        els.main.classList.remove('switching');
       }, 150);
+    }
+
+    function updateKeypadRender() {
+      const padded = keypadVal.padStart(6, '0');
+      els.keypadDisp.textContent = padded === "000000" ? "00h 00m 00s" : `${padded.slice(0,2)}h ${padded.slice(2,4)}m ${padded.slice(4,6)}s`;
+      els.keypadDisp.classList.remove('pop'); void els.keypadDisp.offsetWidth; els.keypadDisp.classList.add('pop');
     }
 
     function openKeypad() {
       if (isRunning) return;
-      keypadVal = ""; els.keypadDisp.textContent = "00h 00m 00s";
+      keypadVal = ""; updateKeypadRender();
       els.keypadSheet.classList.add('open'); els.scrim.classList.add('open');
     }
     
@@ -500,10 +567,23 @@
         vibrate(30);
         if (btn.id === 'kbtn-back') keypadVal = keypadVal.slice(0, -1);
         else if (keypadVal.length + btn.textContent.trim().length <= 6) keypadVal += btn.textContent.trim();
-        const padded = keypadVal.padStart(6, '0');
-        els.keypadDisp.textContent = padded === "000000" ? "00h 00m 00s" : `${padded.slice(0,2)}h ${padded.slice(2,4)}m ${padded.slice(4,6)}s`;
-        els.keypadDisp.classList.remove('pop'); void els.keypadDisp.offsetWidth; els.keypadDisp.classList.add('pop');
+        updateKeypadRender();
       });
+    });
+
+    document.addEventListener('keydown', e => {
+      if (!els.keypadSheet.classList.contains('open')) return;
+      if (e.key >= '0' && e.key <= '9') {
+        if (keypadVal.length < 6) keypadVal += e.key;
+        updateKeypadRender();
+      } else if (e.key === 'Backspace') {
+        keypadVal = keypadVal.slice(0, -1);
+        updateKeypadRender();
+      } else if (e.key === 'Enter') {
+        document.getElementById('keypad-start').click();
+      } else if (e.key === 'Escape') {
+        document.getElementById('keypad-cancel').click();
+      }
     });
 
     document.getElementById('keypad-start').addEventListener('click', () => {
@@ -546,12 +626,12 @@
         set('--p',`hsl(${h},${sat}%,78%)`); set('--op',`hsl(${h},${s}%,11%)`); set('--pc',`hsl(${h},${s}%,24%)`); set('--opc',`hsl(${h},${sat}%,90%)`);
         set('--bg',`hsl(${h},10%,6%)`); set('--obg',`hsl(${h},8%,88%)`); set('--sc',`hsl(${h},10%,9%)`); set('--sch',`hsl(${h},10%,14%)`);
         set('--sv',`hsl(${h},10%,17%)`); set('--osv',`hsl(${h},7%,70%)`); set('--olv',`hsl(${h},8%,25%)`); 
-        els.metaTheme.content = hslToHex(h, 10, 6); // Native Android Chrome support
+        els.metaTheme.content = hslToHex(h, 10, 6);
       } else {
         set('--p',`hsl(${h},${s}%,32%)`); set('--op',`#ffffff`); set('--pc',`hsl(${h},${Math.min(s+22,90)}%,88%)`); set('--opc',`hsl(${h},${s}%,10%)`);
         set('--bg',`hsl(${h},18%,97%)`); set('--obg',`hsl(${h},10%,10%)`); set('--sc',`hsl(${h},15%,92%)`); set('--sch',`hsl(${h},15%,88%)`);
         set('--sv',`hsl(${h},14%,88%)`); set('--osv',`hsl(${h},8%,38%)`); set('--olv',`hsl(${h},10%,78%)`); 
-        els.metaTheme.content = hslToHex(h, 18, 97); // Native Android Chrome support
+        els.metaTheme.content = hslToHex(h, 18, 97);
       }
       seedHex = hex; localStorage.setItem('seed', hex); document.querySelectorAll('.preset').forEach(p => p.classList.toggle('sel', p.dataset.hex === hex));
     }
@@ -563,7 +643,7 @@
 
     function wakeUp() { if (psActive) { document.body.classList.remove('ps-active'); psActive = false; } }
     function resetIdle() { wakeUp(); clearTimeout(psTimer); if (psEnabled) { psTimer = setTimeout(() => { psActive = true; document.body.classList.add('ps-active'); }, psMinutes * 60000); } }
-    ['touchstart','mousemove','click'].forEach(e => document.addEventListener(e, resetIdle));
+    ['touchstart','mousemove','click','keydown'].forEach(e => document.addEventListener(e, resetIdle));
     els.psToggle.addEventListener('change', e => { vibrate(30); psEnabled = e.target.checked; localStorage.setItem('psEnabled', psEnabled); resetIdle(); });
     els.psTime.addEventListener('input', e => { psMinutes = Math.max(1, parseInt(e.target.value)||5); localStorage.setItem('psMinutes', psMinutes); resetIdle(); });
 
