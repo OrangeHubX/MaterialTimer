@@ -1,21 +1,21 @@
 {
   "name": "Material Timer",
   "short_name": "Timer",
-  "description": "A minimalist Material You Pomodoro timer",
-  "start_url": "index.html", /* Or the filename of your HTML */
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#d8e8cc", /* Match your default background */
-  "theme_color": "#4c8346",  /* Match your accent color */
+  "background_color": "#f5faf0",
+  "theme_color": "#4c8346",
   "icons": [
     {
-      "src": "icon-192x192.png", /* Replace with your actual icon paths */
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 }
+
