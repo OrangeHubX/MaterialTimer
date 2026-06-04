@@ -165,8 +165,6 @@
     
     body.fs.cv #top-bar, body.fs.cv #controls, body.fs.cv #mode-chip, body.fs.cv #sessions, body.fs.cv #sw-pendulum { opacity:1; pointer-events:auto; }
     body.fs.cv #dur-row:not(.hidden), body.fs.cv #custom-hint:not([style*="none"]) { opacity:1; pointer-events:auto; }
-    
-    /* Override to keep pendulum active if setting is checked */
     body.fs:not(.cv)[data-pendulum-idle="true"] #sw-pendulum { opacity:1 !important; pointer-events:auto; }
 
     .scrim {
@@ -174,7 +172,6 @@
     }
     .scrim.open { opacity: 1; pointer-events: auto; }
 
-    /* Bottom sheets responsive scrolling upgrade */
     .bottom-sheet {
       position: fixed; bottom: 0; left: 0; right: 0; background: var(--sc); border-radius: 28px 28px 0 0;
       padding: 16px 24px 44px; z-index: 99; transform: translateY(100%); 
@@ -319,6 +316,14 @@
   <div id="settings-sheet" class="bottom-sheet">
     <div class="sheet-handle"></div>
     <h3>Settings</h3>
+    
+    <div class="setting-group" id="install-group" style="display: none;">
+      <div class="setting-row">
+        <span>Install App</span>
+        <button id="install-btn" class="dialog-btn" style="background: var(--p); color: var(--op);">Install</button>
+      </div>
+    </div>
+
     <div class="setting-group"><label>Theme Palette</label><div id="presets"></div></div>
     <div class="setting-group"><div class="setting-row"><span>Dark Mode</span><input type="checkbox" id="theme-toggle" class="toggle-switch"></div></div>
     <div class="setting-group"><label>Pendulum Effect</label>
@@ -369,7 +374,7 @@
   <video id="bgv" loop muted playsinline><source src="blank-0.2-sec.m4v" type="video/mp4"></video>
 
   <script>
-    const APP_VERSION = 'v1.4';
+    const APP_VERSION = 'v1.5';
     document.getElementById('ver-num').textContent = APP_VERSION;
 
     const FOCUS_DEFAULT = 25 * 60, BREAK_SHORT = 5 * 60, BREAK_LONG = 15 * 60, LONG_EVERY = 4;
@@ -381,7 +386,9 @@
     let ticker = null, seedHex = localStorage.getItem('seed') || '#4c8346';
     let cvTimer = null, keypadVal = "", customName = "Custom Timer";
     
-    // Engine absolute starting parameters
+    // PWA Install Variables
+    let deferredPrompt;
+
     let animStart = 0;
     let showPendulum = localStorage.getItem('showPendulum') !== 'false';
     let showPendulumIdle = localStorage.getItem('showPendulumIdle') === 'true';
@@ -404,10 +411,36 @@
       dlg: document.getElementById('warning-dialog'), metaTheme: document.getElementById('meta-theme-color'),
       psToggle: document.getElementById('ps-toggle'), psTime: document.getElementById('ps-time'),
       themeToggle: document.getElementById('theme-toggle'), pendToggle: document.getElementById('pendulum-toggle'),
-      pendIdleToggle: document.getElementById('pendulum-idle-toggle')
+      pendIdleToggle: document.getElementById('pendulum-idle-toggle'),
+      installGroup: document.getElementById('install-group'), installBtn: document.getElementById('install-btn')
     };
 
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+    // PWA Service Worker & Install Logic
+    if ('serviceWorker' in navigator) { 
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{})); 
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      els.installGroup.style.display = 'block';
+    });
+
+    els.installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          els.installGroup.style.display = 'none';
+        }
+        deferredPrompt = null;
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      els.installGroup.style.display = 'none';
+      deferredPrompt = null;
+    });
 
     function vibrate(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
@@ -419,7 +452,6 @@
     function totalTime() { return !isBreak ? focusDur : (sessions % LONG_EVERY === 0 ? BREAK_LONG : BREAK_SHORT); }
     function snapProgress() { els.prog.style.transition = 'none'; els.prog.style.height = '0%'; requestAnimationFrame(() => requestAnimationFrame(() => els.prog.style.transition = '')); }
 
-    // High Precision Pendulum Animation Loop
     function animatePendulum() {
       if (!showPendulum || appMode !== 'stopwatch' || !isRunning) {
         flattenPendulum();
@@ -427,21 +459,18 @@
       }
       
       const lines = els.swPendulum.querySelectorAll('.pline');
-      const N = lines.length; // 15 lines total
+      const N = lines.length;
       const elapsed = Date.now() - animStart;
       
-      // Calculate the current 1-second phase position (0 to 1)
       const phaseTime = (elapsed % 1000) / 1000;
-      const direction = Math.floor(elapsed / 1000) % 2; // 0 = forward, 1 = backward
+      const direction = Math.floor(elapsed / 1000) % 2; 
       
-      // Map phase coordinates to a perfect pendulum cosine curve
       let k = (1 - Math.cos(phaseTime * Math.PI)) / 2;
-      if (direction === 1) k = 1 - k; // Alternate return cycle path
+      if (direction === 1) k = 1 - k;
 
       let idx = Math.floor(k * N);
       idx = Math.min(Math.max(idx, 0), N - 1);
 
-      // Kinetic micro bounce algorithm at edge contacts (first 150ms)
       const edgeMs = elapsed % 1000;
       let bounceAmt = 0;
       if (edgeMs < 150) {
@@ -450,12 +479,12 @@
 
       lines.forEach((line, i) => {
         line.className = 'pline';
-        line.style.height = ''; // Clear prior inline overrides
+        line.style.height = ''; 
         
         if (i === idx) {
           line.classList.add('active');
           if (idx === 0 || idx === N - 1) {
-            line.style.height = (14 + bounceAmt) + 'px'; // Inject flex height boost
+            line.style.height = (14 + bounceAmt) + 'px';
           }
         }
         else if (Math.abs(i - idx) === 1) line.classList.add('adj-1');
@@ -465,17 +494,10 @@
       pendTicker = requestAnimationFrame(animatePendulum);
     }
 
-    // Drops lines instantly to resting layout values
     function flattenPendulum() {
       const lines = els.swPendulum.querySelectorAll('.pline');
-      lines.forEach(line => {
-        line.className = 'pline';
-        line.style.height = '';
-      });
-      if (pendTicker) {
-        cancelAnimationFrame(pendTicker);
-        pendTicker = null;
-      }
+      lines.forEach(line => { line.className = 'pline'; line.style.height = ''; });
+      if (pendTicker) { cancelAnimationFrame(pendTicker); pendTicker = null; }
     }
 
     function checkPendulumVisibility() {
@@ -535,16 +557,13 @@
       if (appMode === 'pomodoro') els.durRow.classList.add('hidden');
       els.bgv.play().catch(()=>{}); updateFSUI(); resetIdle();
       
-      // Lock origin timeline timestamp across engine threads
       if (appMode === 'stopwatch') animStart = Date.now() - (swTime * 1000);
       else animStart = Date.now() - ((totalTime() - remaining) * 1000);
 
       checkPendulumVisibility();
 
       ticker = setInterval(() => {
-        if (appMode === 'stopwatch') { 
-          updateDisplay(); 
-        }
+        if (appMode === 'stopwatch') { updateDisplay(); }
         else {
           remaining--; updateDisplay();
           if (remaining <= 0) {
@@ -708,7 +727,6 @@
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light'); localStorage.setItem('theme', dark ? 'dark' : 'light'); applyPalette(seedHex, dark);
     }
 
-    // Settings Toggle Configurations
     els.pendToggle.addEventListener('change', e => { showPendulum = e.target.checked; localStorage.setItem('showPendulum', showPendulum); checkPendulumVisibility(); });
     els.pendIdleToggle.addEventListener('change', e => { 
       showPendulumIdle = e.target.checked; 
@@ -741,7 +759,6 @@
     els.themeToggle.addEventListener('change', updateTheme);
     document.querySelectorAll('.mtbtn').forEach(btn => btn.addEventListener('click', e => trySwitchMode(e.currentTarget.dataset.mode)));
 
-    // Initial state bindings
     els.pendToggle.checked = showPendulum; 
     els.pendIdleToggle.checked = showPendulumIdle;
     document.body.setAttribute('data-pendulum-idle', showPendulumIdle);

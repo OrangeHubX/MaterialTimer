@@ -3,7 +3,7 @@
   "short_name": "Timer",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f5faf0",
+  "background_color": "#fdfdf9",
   "theme_color": "#4c8346",
   "icons": [
     {
@@ -18,4 +18,3 @@
     }
   ]
 }
-
